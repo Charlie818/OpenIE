@@ -5,6 +5,7 @@ import java.util.ArrayList;
  * Created by qiujiarong on 30/11/2017.
  */
 public class MessageStat {
+
     public static ArrayList<Message> readTxtFile(String filename){
         ArrayList<Message> res= new ArrayList<Message>();
 
@@ -25,7 +26,6 @@ public class MessageStat {
                     Message mes = new Message(sender,receiver,message);
                     res.add(mes);
                     cnt++;
-//                    if(cnt>50)break;
                 }
                 read.close();
             }else{
@@ -38,17 +38,14 @@ public class MessageStat {
         return res;
     }
 
-    public static void relationOutput(String filename,ArrayList<MessageRelation> relations){
+    public static void relationOutput(String filename,ArrayList<Relation> relations){
         File file=new File(filename);
         try {
             if (!file.exists())
                 file.createNewFile();
             FileOutputStream out = new FileOutputStream(file);
-            for (MessageRelation relation:relations) {
-                Relation relation1=relation.getRelation();
-                out.write((relation.getUser()+'\t'+
-                        relation.getContact()+'\t'+
-                        relation1.getSubject()+"\t"+relation1.getObject()+"\t"+relation1.getRelation()+"\n").getBytes());
+            for (Relation relation:relations) {
+                out.write((relation.getSubject()+"\t"+relation.getObject()+"\t"+relation.getRelation()+"\n").getBytes());
             }
             out.close();
         }catch (Exception e) {
@@ -56,26 +53,53 @@ public class MessageStat {
             e.printStackTrace();
         }
     }
-    public static ArrayList<Relation> GetRelation(String message){
+
+
+    public static ArrayList<Relation> GetRelation(Message message){
         ArrayList<Relation> relations = new ArrayList<Relation>();
-        relations.addAll( StanfordAPI.OpenIE(message));
+        ArrayList<String> candidates=StanfordAPI.NER(message.getMessage());
+        for(Relation relation: StanfordAPI.OpenIE(message.getMessage())){
+            String sub=relation.getSubject(),obj=relation.getObject();
+            if(!(candidates.contains(sub)&&candidates.contains(obj)))continue;
+            if(sub.equals("I") || sub.equals("i")){
+                sub=message.getSender();
+            }else if(sub.equals("You") ||sub.equals("u") || sub.equals("you")){
+                sub=message.getReceiver();
+            }else if(sub.equals("We")||sub.equals("we")){
+                sub=message.getSender()+" and "+ message.getReceiver();
+            }
+            if(obj.equals("I") || obj.equals("i")){
+                obj=message.getSender();
+            }else if(obj.equals("You") ||obj.equals("u")||obj.equals("you")){
+                obj=message.getReceiver();
+            }
+            if(sub==relation.getSubject() && obj==relation.getObject())continue;
+            relations.add(new Relation(sub,relation.getRelation(),obj));
+        }
         return relations;
     }
+//    public static ArrayList<MessageRelation> GetRelation(Message message){
+//        ArrayList<MessageRelation> messageRelations = new ArrayList<MessageRelation>();
+//        ArrayList<Relation> relations = new ArrayList<Relation>();
+//        relations.addAll( StanfordAPI.OpenIE(message.getMessage()));
+//        for(Relation relation:relations){
+//
+//
+//        }
+//
+//    }
     public static void main(String[] args) {
-        String filename="/Users/qiujiarong/Desktop/CMU/all_message";
+        String filename="/Users/qiujiarong/Desktop/DeepScrubb/all_message_0";
         ArrayList<Message> messages= new ArrayList<Message>();
         messages=MessageStat.readTxtFile(filename);
-        ArrayList<MessageRelation> relations=new ArrayList<MessageRelation>();
+        ArrayList<Relation> relations=new ArrayList<Relation>();
         for(int i=0;i<messages.size();i++){
             if(i%50==0)System.out.println(i);
             Message mes = messages.get(i);
-            for(Relation relation:GetRelation(mes.getMessage())) {
-
-                relations.add(new MessageRelation(mes.getSender(), mes.getReceiver(), relation));
-            }
+            relations.addAll(GetRelation(mes));
         }
         System.out.println(relations.size());
-        MessageStat.relationOutput("/Users/qiujiarong/Desktop/CMU/all_message2",relations);
+        MessageStat.relationOutput("/Users/qiujiarong/Desktop/DeepScrubb/all_message_01",relations);
 
     }
 }

@@ -53,9 +53,9 @@ public class BasicPipelineExample {
     public static void OpenIE(String line){
         Annotation doc = new Annotation(line);
         Properties props = new Properties();
-        props.setProperty("openie.resolve_coref", "true");
-        props.setProperty("openie.threads", "1");
-        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse,parse,natlog,ner,coref,openie");
+//        props.setProperty("openie.resolve_coref", "true");
+//        props.setProperty("openie.threads", "1");
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse,parse,natlog,ner,openie");
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
         pipeline.annotate(doc);
         // Loop over sentences in the document
@@ -98,7 +98,7 @@ public class BasicPipelineExample {
 
     public static void main(String[] args) {
 //        String line=readTxtFile();
-        String line="Hi, John. I will meet you at school.";
+        String line="Can we watch Tokyo Ghoul in 1305 on Friday night or Saturday night please";
         System.out.println(line);
         OpenIE(line);
         NER(line);
